@@ -1,33 +1,68 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { CallType, ExecType, ModeCode } from "../libraries/ModeLib.sol";
+// Internal Libraries
+import {CallType, ExecType, ModeCode} from "../libraries/ModeLib.sol";
 
-/* ///////////////////////////////////////////////////////////////
+    /* ///////////////////////////////////////////////////////////////
                                 STRUCTS
     ///////////////////////////////////////////////////////////////*/
-struct Execution {
-    address target;
-    uint256 value;
-    bytes callData;
-}
 
-interface IERC7579Minimal {
+    /**
+    * @notice Execution struct containing call parameters for batch operations
+    * @param target The address of the contract to call
+    * @param value The amount of native tokens (wei) to send with the call
+    * @param callData The encoded function call data to execute
+    */
+    struct Execution {
+        address target;
+        uint256 value;
+        bytes callData;
+    }
 
+    /**
+    * @title IERC7579Minimal
+    * @notice Interface for minimal ERC-7579 modular smart account implementation
+    * @dev Defines core functionality for executing transactions on behalf of smart accounts
+    *      Compatible with ERC-4337 account abstraction standard
+    */
+    interface IERC7579Minimal {
     /* ///////////////////////////////////////////////////////////////
                                 ERRORS
     ///////////////////////////////////////////////////////////////*/
 
-    error UnsupportedCallType(CallType);
+    /**
+     * @notice Thrown when an unsupported call type is requested
+     * @param callType The unsupported call type that was attempted
+     */
+    error UnsupportedCallType(CallType callType);
 
-    error UnsupportedExecType(ExecType);
+    /**
+     * @notice Thrown when an unsupported execution type is requested
+     * @param execType The unsupported execution type that was attempted
+     */
+    error UnsupportedExecType(ExecType execType);
 
     /* ///////////////////////////////////////////////////////////////
                                 EVENTS
     ///////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Emitted when a transaction execution failed in TRY mode
+     * @dev In TRY mode, failures don't revert the entire batch, only emit this event
+     * @param numberInBatch The index of the failed execution in the batch
+     */
     event TryExecutionFailed(uint256 numberInBatch);
 
+    /**
+     * @notice Emitted when a transaction is successfully executed
+     * @param nonce The sequential nonce of the executed transaction
+     * @param executor The address that initiated the execution
+     * @param target The address of the contract that was called
+     * @param callData The encoded function call data that was executed
+     * @param value The amount of native tokens (wei) sent with the call
+     * @param result The return data from the executed call
+     */
     event Executed(
         uint256 indexed nonce,
         address executor,
@@ -40,24 +75,23 @@ interface IERC7579Minimal {
     /* ///////////////////////////////////////////////////////////////
                                 CORE
     ///////////////////////////////////////////////////////////////*/
-    
+
     /**
-     * @dev Executes a transaction on behalf of the account.
-     *         This function is intended to be called by ERC-4337 EntryPoint.sol
-     * @dev Ensure adequate authorization control: i.e. onlyEntryPointOrSelf
-     *
-     * @dev MSA MUST implement this function signature.
-     * If a mode is requested that is not supported by the Account, it MUST revert
-     * @param mode The encoded execution mode of the transaction. See ModeLib.sol for details
-     * @param executionCalldata The encoded execution call data
+     * @notice Executes a transaction on behalf of the account
+     * @dev This function is intended to be called by ERC-4337 EntryPoint or authorized executors
+     *      Implementations MUST ensure adequate authorization control
+     *      Implementations MUST revert if an unsupported mode is requested
+     *      Supports batch executions with either DEFAULT (revert on failure) or TRY (continue on failure) modes
+     * @param mode The encoded execution mode of the transaction containing CallType and ExecType
+     * @param executionCalldata The encoded execution call data containing target, value, and calldata
+     * @return result Array of bytes containing the return data from each executed call
      */
     function execute(ModeCode mode, bytes calldata executionCalldata) external returns (bytes[] memory result);
 
     /**
-     * @dev Returns the account id of the smart account
-     * @return accountImplementationId the account id of the smart account
-     * the accountId should be structured like so:
-     *        "vendorname.accountname.semver"
+     * @notice Returns the account implementation identifier
+     * @dev The accountId should be structured as "vendorname.accountname.semver"
+     * @return accountImplementationId The unique identifier string for this account implementation
      */
     function accountId() external view returns (string memory accountImplementationId);
 }

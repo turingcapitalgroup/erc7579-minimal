@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {IERC7579Minimal, Execution, ModeCode} from "../src/interfaces/IERC7579Minimal.sol";
 import {ERC7579Minimal, ExecutionLib, IRegistry} from "../src/ERC7579Minimal.sol";
+import {ModeLib, CALLTYPE_BATCH, EXECTYPE_DEFAULT, EXECTYPE_TRY, MODE_DEFAULT, ModePayload} from "../src/libraries/ModeLib.sol";
 
 contract MockRegistry is IRegistry {
     bool public shouldRevert;
@@ -72,11 +73,11 @@ contract ERC7579MinimalTest is Test {
 
     function _encodeBatch(address t, uint256 v, bytes memory data) internal pure returns (bytes memory) {
         Execution[] memory executions = new Execution[](1);
-        executions[0] = Execution(t, v, data);
+        executions[0] = Execution({target: t, value: v, callData: data});
         return ExecutionLib.encodeBatch(executions);
     }
 
-    function testInitialize() public {
+    function testInitialize() public view {
         assertEq(minimal.accountId(), "acc");
     }
 
@@ -84,7 +85,7 @@ contract ERC7579MinimalTest is Test {
         bytes memory data = abi.encodeWithSelector(setValueSelector, 123);
         bytes memory execData = _encodeBatch(address(target), 0, data);
         vm.startPrank(executor);
-        bytes[] memory result = minimal.execute(ModeCode.wrap(bytes32(uint256(0x0101))), execData);
+        bytes[] memory result = minimal.execute(ModeLib.encodeSimpleBatch(), execData);
         vm.stopPrank();
         assertEq(target.value(), 123);
         assertEq(minimal.nonce(), 1);
@@ -95,14 +96,14 @@ contract ERC7579MinimalTest is Test {
         bytes memory data = abi.encodeWithSelector(setValueSelector, 1);
         bytes memory execData = _encodeBatch(address(target), 0, data);
         vm.expectRevert();
-        minimal.execute(ModeCode.wrap(bytes32(uint256(0x0101))), execData);
+        minimal.execute(ModeLib.encodeSimpleBatch(), execData);
     }
 
     function testExecuteRevertUnsupportedCallType() public {
         bytes memory data = abi.encodeWithSelector(setValueSelector, 1);
         vm.startPrank(executor);
         vm.expectRevert();
-        minimal.execute(ModeCode.wrap(bytes32(uint256(0x0000))), data);
+        minimal.execute(ModeLib.encodeSimpleSingle(), data);
         vm.stopPrank();
     }
 
@@ -112,7 +113,8 @@ contract ERC7579MinimalTest is Test {
         vm.startPrank(executor);
         vm.expectEmit(true, false, false, true);
         emit IERC7579Minimal.TryExecutionFailed(0);
-        minimal.execute(ModeCode.wrap(bytes32(uint256(0x0201))), execData);
+        ModeCode tryMode = ModeLib.encode(CALLTYPE_BATCH, EXECTYPE_TRY, MODE_DEFAULT, ModePayload.wrap(0x00));
+        minimal.execute(tryMode, execData);
         vm.stopPrank();
         assertEq(minimal.nonce(), 1);
     }
@@ -123,7 +125,7 @@ contract ERC7579MinimalTest is Test {
         bytes memory execData = _encodeBatch(address(target), 0, data);
         vm.startPrank(executor);
         vm.expectRevert(bytes("unauthorized"));
-        minimal.execute(ModeCode.wrap(bytes32(uint256(0x0101))), execData);
+        minimal.execute(ModeLib.encodeSimpleBatch(), execData);
         vm.stopPrank();
     }
 }
