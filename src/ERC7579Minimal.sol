@@ -16,19 +16,35 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
     using ExecutionLib for bytes;
     using LibCall for address;
 
+    /* ///////////////////////////////////////////////////////////////
+                                ROLES
+    ///////////////////////////////////////////////////////////////*/
+
     uint256 internal constant ADMIN_ROLE = _ROLE_0;
 
     uint256 internal constant EXECUTOR_ROLE = _ROLE_1;
 
+    /* ///////////////////////////////////////////////////////////////
+                              VARIABLES
+    ///////////////////////////////////////////////////////////////*/
+
     IRegistry registry;
     uint256 public nonce;
     string public accountId;
+
+    /* ///////////////////////////////////////////////////////////////
+                             CONSTRUCTOR
+    ///////////////////////////////////////////////////////////////*/
 
     function initialize(address _owner, IRegistry _registry, string memory _accountId) external initializer {
         registry = _registry;
         accountId = _accountId;
         _initializeOwner(_owner);
     }
+
+    /* ///////////////////////////////////////////////////////////////
+                            CORE OPERATIONS
+    ///////////////////////////////////////////////////////////////*/
 
     function execute(ModeCode mode, bytes calldata executionCalldata) external virtual returns (bytes[] memory result) {
         _authorizeExecute(msg.sender);
@@ -40,9 +56,8 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
             callType := mode
             execType := shl(8, mode)
         }
-        /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-        /*                   REVERT ON FAILED EXEC                    */
-        /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+        
+        // Revert on failed Exec
         if (execType == EXECTYPE_DEFAULT) {
             // DEFAULT EXEC & BATCH CALL
             if (callType == CALLTYPE_BATCH) {
@@ -55,9 +70,8 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
                 revert UnsupportedCallType(callType);
             }
         }
-        /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-        /*                           TRY EXEC                         */
-        /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+        
+        // Try Exec
         else if (execType == EXECTYPE_TRY) {
             // TRY EXEC & BATCH CALL
             if (callType == CALLTYPE_BATCH) {
@@ -69,9 +83,7 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
                 revert UnsupportedCallType(callType);
             }
         }
-        /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-        /*               HANDLE UNSUPPORTED EXEC TYPE                 */
-        /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+        // Handle Unsupported Exec Typy
         else {
             revert UnsupportedExecType(execType);
         }
@@ -122,6 +134,10 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
             );
         }
     }
+
+    /* ///////////////////////////////////////////////////////////////
+                            ADMIN OPERATIONS
+    ///////////////////////////////////////////////////////////////*/
 
     function _authorizeUpgrade(address) internal virtual override {
         _checkOwner();
