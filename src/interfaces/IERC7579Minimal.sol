@@ -2,31 +2,31 @@
 pragma solidity ^0.8.20;
 
 // Internal Libraries
-import {CallType, ExecType, ModeCode} from "../libraries/ModeLib.sol";
+import { CallType, ExecType, ModeCode } from "../libraries/ModeLib.sol";
 
-    /* ///////////////////////////////////////////////////////////////
-                                STRUCTS
-    ///////////////////////////////////////////////////////////////*/
+/* ///////////////////////////////////////////////////////////////
+                            STRUCTS
+///////////////////////////////////////////////////////////////*/
 
-    /**
-    * @notice Execution struct containing call parameters for batch operations
-    * @param target The address of the contract to call
-    * @param value The amount of native tokens (wei) to send with the call
-    * @param callData The encoded function call data to execute
-    */
-    struct Execution {
-        address target;
-        uint256 value;
-        bytes callData;
-    }
+/**
+ * @notice Execution struct containing call parameters for batch operations
+ * @param target The address of the contract to call
+ * @param value The amount of native tokens (wei) to send with the call
+ * @param callData The encoded function call data to execute
+ */
+struct Execution {
+    address target;
+    uint256 value;
+    bytes callData;
+}
 
-    /**
-    * @title IERC7579Minimal
-    * @notice Interface for minimal ERC-7579 modular smart account implementation
-    * @dev Defines core functionality for executing transactions on behalf of smart accounts
-    *      Compatible with ERC-4337 account abstraction standard
-    */
-    interface IERC7579Minimal {
+/**
+ * @title IERC7579Minimal
+ * @notice Interface for minimal ERC-7579 modular smart account implementation
+ * @dev Defines core functionality for executing transactions on behalf of smart accounts
+ *      Compatible with ERC-4337 account abstraction standard
+ */
+interface IERC7579Minimal {
     /* ///////////////////////////////////////////////////////////////
                                 ERRORS
     ///////////////////////////////////////////////////////////////*/

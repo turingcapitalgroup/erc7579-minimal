@@ -2,18 +2,18 @@
 pragma solidity ^0.8.20;
 
 // External Libraries
-import {OwnableRoles} from "solady/auth/OwnableRoles.sol";
-import {Initializable} from "solady/utils/Initializable.sol";
-import {LibCall} from "solady/utils/LibCall.sol";
-import {UUPSUpgradeable} from "solady/utils/UUPSUpgradeable.sol";
+import { OwnableRoles } from "solady/auth/OwnableRoles.sol";
+import { Initializable } from "solady/utils/Initializable.sol";
+import { LibCall } from "solady/utils/LibCall.sol";
+import { UUPSUpgradeable } from "solady/utils/UUPSUpgradeable.sol";
 
 // Internal Libraries
-import {ExecutionLib} from "./libraries/ExecutionLib.sol";
-import {CALLTYPE_BATCH, CallType, EXECTYPE_DEFAULT, EXECTYPE_TRY, ExecType, ModeCode} from "./libraries/ModeLib.sol";
+import { ExecutionLib } from "./libraries/ExecutionLib.sol";
+import { CALLTYPE_BATCH, CallType, EXECTYPE_DEFAULT, EXECTYPE_TRY, ExecType, ModeCode } from "./libraries/ModeLib.sol";
 
 // Local Interfaces
-import {Execution, IERC7579Minimal} from "./interfaces/IERC7579Minimal.sol";
-import {IRegistry} from "./interfaces/IRegistry.sol";
+import { Execution, IERC7579Minimal } from "./interfaces/IERC7579Minimal.sol";
+import { IRegistry } from "./interfaces/IRegistry.sol";
 
 /**
  * @title ERC7579Minimal
@@ -59,7 +59,14 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
      * @param _registryAddress The registry contract address for authorizing adapter calls
      * @param _accountId The unique identifier string for this account implementation
      */
-    function initialize(address _owner, IRegistry _registryAddress, string memory _accountId) external initializer {
+    function initialize(
+        address _owner,
+        IRegistry _registryAddress,
+        string memory _accountId
+    )
+        external
+        initializer
+    {
         _registry = _registryAddress;
         accountId = _accountId;
         _initializeOwner(_owner);
@@ -70,14 +77,7 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
     ///////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IERC7579Minimal
-    function execute(
-        ModeCode mode,
-        bytes calldata executionCalldata
-    )
-        external
-        virtual
-        returns (bytes[] memory result)
-    {
+    function execute(ModeCode mode, bytes calldata executionCalldata) external virtual returns (bytes[] memory result) {
         _authorizeExecute(msg.sender);
         CallType _callType;
         ExecType _execType;
@@ -170,9 +170,8 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
             _registry.authorizeAdapterCall(executions[_i].target, _functionSig, _params);
 
             // Execute and store result
-            (bool _success,, bytes memory _callResult) = executions[_i].target.tryCall(
-                executions[_i].value, type(uint256).max, type(uint16).max, executions[_i].callData
-            );
+            (bool _success,, bytes memory _callResult) = executions[_i].target
+                .tryCall(executions[_i].value, type(uint256).max, type(uint16).max, executions[_i].callData);
             result[_i] = _callResult;
             if (!_success) emit TryExecutionFailed(_i);
             emit Executed(
