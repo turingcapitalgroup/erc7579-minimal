@@ -7,24 +7,60 @@ import { IRegistry } from "./interfaces/IRegistry.sol";
 import { ExecutionLib } from "./libraries/ExecutionLib.sol";
 import {
     CALLTYPE_BATCH,
-    CALLTYPE_DELEGATECALL,
-    CALLTYPE_SINGLE,
     CallType,
     EXECTYPE_DEFAULT,
     EXECTYPE_TRY,
     ExecType,
     ModeCode
 } from "./libraries/ModeLib.sol";
-import { LibCall } from "solady/utils/LibCall.sol";
 
-abstract contract ERC7579Minimal is IERC7579Minimal {
+import { OwnableRoles } from "solady/auth/OwnableRoles.sol";
+import { Initializable } from "solady/utils/Initializable.sol";
+import { LibCall } from "solady/utils/LibCall.sol";
+import { UUPSUpgradeable } from "solady/utils/UUPSUpgradeable.sol";
+
+contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, OwnableRoles {
     using ExecutionLib for bytes;
+    using LibCall for address;
+
+    event Executed(
+        uint256 indexed nonce,
+        address executor,
+        address indexed target,
+        bytes indexed callData,
+        uint256 value,
+        bytes result
+    );
 
     event TryExecutionFailed(uint256 numberInBatch);
 
-    IRegistry registry;
+    error UnsupportedCallType(CallType);
 
-    function execute(ModeCode mode, bytes calldata executionCalldata) external returns (bytes[] memory result) {
+    error UnsupportedExecType(ExecType);
+
+    uint256 internal constant ADMIN_ROLE = _ROLE_0;
+
+    uint256 internal constant EXECUTOR_ROLE = _ROLE_1;
+
+    IRegistry registry;
+    uint256 public nonce;
+    string public accountId;
+
+    function initialize(address _owner, IRegistry _registry, string memory _accountId) external initializer {
+        registry = _registry;
+        accountId = _accountId;
+        _initializeOwner(_owner);
+    }
+
+    function execute(
+        ModeCode mode,
+        bytes calldata executionCalldata
+    )
+        external
+        virtual
+        returns (bytes[] memory result)
+    {
+        _authorizeExecute(msg.sender);
         CallType callType;
         ExecType execType;
 
@@ -70,24 +106,14 @@ abstract contract ERC7579Minimal is IERC7579Minimal {
         }
     }
 
-    function executeFromExecutor(
-        ModeCode mode,
-        bytes calldata executionCalldata
-    )
-        external
-        returns (bytes[] memory returnData);
-
-    function isValidSignature(bytes32 hash, bytes calldata data) external returns (bytes4);
-
-    function accountId() external view returns (string memory accountImplementationId);
-
-    function _exec(Execution[] calldata executions) internal returns (bytes[] memory result) {
+    function _exec(Execution[] calldata executions) internal virtual returns (bytes[] memory result) {
         uint256 length = executions.length;
         // Pre-allocate result array
         result = new bytes[](length);
 
         // Execute calls with optimized loop
         for (uint256 i; i < length; ++i) {
+            ++nonce;
             // Extract selector and validate vault-specific permission
             bytes4 functionSig = bytes4(executions[i].callData);
             bytes memory params = executions[i].callData[4:];
@@ -95,17 +121,21 @@ abstract contract ERC7579Minimal is IERC7579Minimal {
 
             // Execute and store result
             result[i] = executions[i].target.callContract(executions[i].value, executions[i].callData);
-            emit Executed(msg.sender, executions[i].target, executions[i].callData, executions[i].values, result[i]);
+            emit Executed(
+                nonce, msg.sender, executions[i].target, executions[i].callData, executions[i].value, result[i]
+            );
         }
     }
 
-    function _tryExec(Execution[] calldata executions) internal returns (bytes[] memory result) {
+    function _tryExec(Execution[] calldata executions) internal virtual returns (bytes[] memory result) {
         uint256 length = executions.length;
         // Pre-allocate result array
         result = new bytes[](length);
 
         // Execute calls with optimized loop
         for (uint256 i; i < length; ++i) {
+            ++nonce;
+
             // Extract selector and validate vault-specific permission
             bytes4 functionSig = bytes4(executions[i].callData);
             bytes memory params = executions[i].callData[4:];
@@ -113,11 +143,21 @@ abstract contract ERC7579Minimal is IERC7579Minimal {
 
             // Execute and store result
             (bool success,, bytes memory _result) = executions[i].target.tryCall(
-                executions[i].value, type(uint256).max, type(uint256).max, executions[i].callData
+                executions[i].value, type(uint256).max, type(uint16).max, executions[i].callData
             );
             result[i] = _result;
             if (!success) emit TryExecutionFailed(i);
-            emit Executed(msg.sender, executions[i].target, executions[i].callData, executions[i].values, result[i]);
+            emit Executed(
+                nonce, msg.sender, executions[i].target, executions[i].callData, executions[i].value, result[i]
+            );
         }
+    }
+
+    function _authorizeUpgrade(address) internal virtual override {
+        _checkOwner();
+    }
+
+    function _authorizeExecute(address) internal virtual {
+        _checkRoles(EXECUTOR_ROLE);
     }
 }
