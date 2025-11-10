@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Execution } from "../interfaces/IERC7579Minimal.sol";
+import { Execution } from "../interfaces/IMinimalSmartAccount.sol";
 
 /**
  * Helper Library for decoding Execution calldata
@@ -64,11 +64,7 @@ library ExecutionLib {
         callData = executionCalldata[52:];
     }
 
-    function encodeSingle(
-        address target,
-        uint256 value,
-        bytes memory callData
-    )
+    function encodeSingle(address target, uint256 value, bytes memory callData)
         internal
         pure
         returns (bytes memory userOpCalldata)

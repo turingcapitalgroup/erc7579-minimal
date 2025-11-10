@@ -100,12 +100,7 @@ library ModeLib {
         }
     }
 
-    function encode(
-        CallType callType,
-        ExecType execType,
-        ModeSelector mode,
-        ModePayload payload
-    )
+    function encode(CallType callType, ExecType execType, ModeSelector mode, ModePayload payload)
         internal
         pure
         returns (ModeCode)

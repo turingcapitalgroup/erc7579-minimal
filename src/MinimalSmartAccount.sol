@@ -12,17 +12,17 @@ import { ExecutionLib } from "./libraries/ExecutionLib.sol";
 import { CALLTYPE_BATCH, CallType, EXECTYPE_DEFAULT, EXECTYPE_TRY, ExecType, ModeCode } from "./libraries/ModeLib.sol";
 
 // Local Interfaces
-import { Execution, IERC7579Minimal } from "./interfaces/IERC7579Minimal.sol";
+import { Execution, IMinimalSmartAccount } from "./interfaces/IMinimalSmartAccount.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
 
 /**
- * @title ERC7579Minimal
+ * @title MinimalSmartAccount
  * @notice Minimal implementation of ERC-7579 modular smart account standard
  * @dev This contract provides a minimal ERC-7579 account with batch execution capabilities,
  * registry-based authorization, UUPS upgradeability, and role-based access control
  * Now uses the ERC-7201 namespaced storage pattern.
  */
-contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, OwnableRoles {
+contract MinimalSmartAccount is IMinimalSmartAccount, Initializable, UUPSUpgradeable, OwnableRoles {
     using ExecutionLib for bytes;
     using LibCall for address;
 
@@ -40,7 +40,7 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
                                 STORAGE
     ///////////////////////////////////////////////////////////////*/
 
-    /// @notice Core storage structure for ERC7579Minimal using ERC-7201 namespaced storage pattern
+    /// @notice Core storage structure for MinimalSmartAccount using ERC-7201 namespaced storage pattern
     /// @custom:storage-location erc7201:erc7579.storage.MinimalAccount
     struct MinimalAccountStorage {
         /// @notice Registry contract for authorizing adapter calls
@@ -70,17 +70,13 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
     ///////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Initializes the ERC7579Minimal account
+     * @notice Initializes the MinimalSmartAccount account
      * @dev Can only be called once due to the initializer modifier
      * @param _owner The address that will be set as the owner of the account
      * @param _registryAddress The registry contract address for authorizing adapter calls
      * @param _accountId The unique identifier string for this account implementation
      */
-    function initialize(
-        address _owner,
-        IRegistry _registryAddress,
-        string memory _accountId
-    )
+    function initialize(address _owner, IRegistry _registryAddress, string memory _accountId)
         external
         virtual
         initializer
@@ -95,7 +91,7 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
                             CORE OPERATIONS
     ///////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IERC7579Minimal
+    /// @inheritdoc IMinimalSmartAccount
     function execute(ModeCode mode, bytes calldata executionCalldata) external virtual returns (bytes[] memory result) {
         _authorizeExecute(msg.sender);
         CallType _callType;
@@ -229,13 +225,13 @@ contract ERC7579Minimal is IERC7579Minimal, Initializable, UUPSUpgradeable, Owna
                             PUBLIC VIEW
     ///////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IERC7579Minimal
+    /// @inheritdoc IMinimalSmartAccount
     function nonce() public view returns (uint256) {
         MinimalAccountStorage storage $ = _getMinimalAccountStorage();
         return $.nonce;
     }
 
-    /// @inheritdoc IERC7579Minimal
+    /// @inheritdoc IMinimalSmartAccount
     function accountId() public view returns (string memory) {
         MinimalAccountStorage storage $ = _getMinimalAccountStorage();
         return $.accountId;

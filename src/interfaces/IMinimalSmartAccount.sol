@@ -21,12 +21,12 @@ struct Execution {
 }
 
 /**
- * @title IERC7579Minimal
+ * @title IMinimalSmartAccount
  * @notice Interface for minimal ERC-7579 modular smart account implementation
  * @dev Defines core functionality for executing transactions on behalf of smart accounts
  *      Compatible with ERC-4337 account abstraction standard
  */
-interface IERC7579Minimal {
+interface IMinimalSmartAccount {
     /* ///////////////////////////////////////////////////////////////
                                 ERRORS
     ///////////////////////////////////////////////////////////////*/

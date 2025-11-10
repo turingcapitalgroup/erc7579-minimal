@@ -28,14 +28,7 @@ library LibCall {
     // They will bubble up the revert if the call fails.
 
     /// @dev Makes a call to `target`, with `data` and `value`.
-    function callContract(
-        address target,
-        uint256 value,
-        bytes memory data
-    )
-        internal
-        returns (bytes memory result)
-    {
+    function callContract(address target, uint256 value, bytes memory data) internal returns (bytes memory result) {
         /// @solidity memory-safe-assembly
         assembly {
             result := mload(0x40)
@@ -138,13 +131,7 @@ library LibCall {
     /// @dev Makes a call to `target`, with `data` and `value`.
     /// The call is given a gas limit of `gasStipend`,
     /// and up to `maxCopy` bytes of return data can be copied.
-    function tryCall(
-        address target,
-        uint256 value,
-        uint256 gasStipend,
-        uint16 maxCopy,
-        bytes memory data
-    )
+    function tryCall(address target, uint256 value, uint256 gasStipend, uint16 maxCopy, bytes memory data)
         internal
         returns (bool success, bool exceededMaxCopy, bytes memory result)
     {
@@ -167,12 +154,7 @@ library LibCall {
     /// @dev Makes a call to `target`, with `data`.
     /// The call is given a gas limit of `gasStipend`,
     /// and up to `maxCopy` bytes of return data can be copied.
-    function tryStaticCall(
-        address target,
-        uint256 gasStipend,
-        uint16 maxCopy,
-        bytes memory data
-    )
+    function tryStaticCall(address target, uint256 gasStipend, uint16 maxCopy, bytes memory data)
         internal
         view
         returns (bool success, bool exceededMaxCopy, bytes memory result)

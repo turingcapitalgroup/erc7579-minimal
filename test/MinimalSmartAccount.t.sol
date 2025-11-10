@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { ERC7579Minimal, ExecutionLib, IRegistry } from "../src/ERC7579Minimal.sol";
-import { Execution, IERC7579Minimal, ModeCode } from "../src/interfaces/IERC7579Minimal.sol";
+import { ExecutionLib, IRegistry, MinimalSmartAccount } from "../src/MinimalSmartAccount.sol";
+import { Execution, IMinimalSmartAccount, ModeCode } from "../src/interfaces/IMinimalSmartAccount.sol";
 import { CALLTYPE_BATCH, EXECTYPE_TRY, MODE_DEFAULT, ModeLib, ModePayload } from "../src/libraries/ModeLib.sol";
 import { Test } from "forge-std/Test.sol";
 
@@ -19,11 +19,7 @@ contract MockRegistry is IRegistry {
         if (!allowed[msg.sender][target][selector]) revert("unauthorized");
     }
 
-    function isAdapterSelectorAllowed(
-        address adapter,
-        address target,
-        bytes4 selector
-    )
+    function isAdapterSelectorAllowed(address adapter, address target, bytes4 selector)
         external
         view
         override
@@ -52,8 +48,8 @@ contract MockTarget {
     }
 }
 
-contract ERC7579MinimalTest is Test {
-    ERC7579Minimal minimal;
+contract MinimalSmartAccountTest is Test {
+    MinimalSmartAccount minimal;
     MockRegistry registry;
     MockTarget target;
     address owner = address(0xABCD);
@@ -63,7 +59,7 @@ contract ERC7579MinimalTest is Test {
 
     function setUp() public {
         registry = new MockRegistry();
-        minimal = new ERC7579Minimal();
+        minimal = new MinimalSmartAccount();
         minimal.initialize(owner, registry, "acc");
         vm.startPrank(owner);
         minimal.grantRoles(executor, 1 << 1);
@@ -114,7 +110,7 @@ contract ERC7579MinimalTest is Test {
         bytes memory execData = _encodeBatch(address(target), 0, data);
         vm.startPrank(executor);
         vm.expectEmit(true, false, false, true);
-        emit IERC7579Minimal.TryExecutionFailed(0);
+        emit IMinimalSmartAccount.TryExecutionFailed(0);
         ModeCode tryMode = ModeLib.encode(CALLTYPE_BATCH, EXECTYPE_TRY, MODE_DEFAULT, ModePayload.wrap(0x00));
         minimal.execute(tryMode, execData);
         vm.stopPrank();
